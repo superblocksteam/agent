@@ -258,15 +258,11 @@ databaseLifecycle:
   pollInterval: 30s
   allowedResourceTypes: []
   allowedModuleSources: []
-  # TLS posture for the migration runner's DSN AND the shared-mode
-  # `provider "postgresql"` block. The worker has no implicit default —
-  # operators must opt in. Production answer is verify-full (full cert +
-  # hostname validation) paired with sslRootCert. `require` encrypts but
-  # does not validate cert identity (MITM-vulnerable) and is intended
-  # only for intra-VPC sandbox connections. See pkg/databaselifecycle/dsn.go
-  # validateSSLOptions for the full state machine.
-  sslMode: ""
-  sslRootCert: ""
+  # Managed RDS and Aurora use full certificate and hostname verification by
+  # default. Override the CA path for private/custom trust roots. Use require
+  # only for exceptional intra-VPC sandboxes that cannot validate identity.
+  sslMode: verify-full
+  sslRootCert: /etc/ssl/certs/aws-rds-global-bundle.pem
   # Allowlist of credential-ref prefixes the worker is permitted to
   # dereference (e.g. "arn:aws:secretsmanager:us-east-1:<account>:secret:rds!db-"
   # to restrict the worker to a single AWS account's RDS-managed secrets).

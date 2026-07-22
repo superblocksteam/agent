@@ -8,7 +8,6 @@ serviceAccount:
     eks.amazonaws.com/role-arn: arn:aws:iam::361919038798:role/database-lifecycle-worker-ephemeral
 databaseLifecycle:
   enabled: true
-  sslMode: require
   allowedResourceTypes:
     - aws_db_instance
   allowedRefPrefixes:

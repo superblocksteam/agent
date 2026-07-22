@@ -3,6 +3,7 @@ package helmtests
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -31,7 +32,8 @@ func TestOPAChartRendersLifecycleWorkerConfigFromNamedGroups(t *testing.T) {
 
 	env := lifecycleEnv(t, container)
 	require.Equal(t, "true", env["SUPERBLOCKS_ORCHESTRATOR_DATABASE_LIFECYCLE_WORKER_ENABLED"])
-	require.Equal(t, "require", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.Equal(t, "verify-full", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.Equal(t, "/etc/ssl/certs/aws-rds-global-bundle.pem", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"])
 	require.Equal(t, "aws_db_instance", env["SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_RESOURCE_TYPES"])
 	require.Equal(t, logicalModuleSource+","+physicalModuleSource, env["SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES"])
 	require.Equal(t,
@@ -68,6 +70,64 @@ func TestOPAChartAllowsVendoredModulesWithoutAdditionalCredentialValues(t *testi
 	)
 	require.NotContains(t, env, "GITHUB_TOKEN")
 	require.NotContains(t, env, "NETRC")
+}
+
+func TestOPAChartRequireModeOmitsRootCertificate(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderLifecycleChart(t,
+		"--set", "databaseLifecycle.sslMode=require",
+	)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(t, "require", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.NotContains(t, env, "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT")
+}
+
+func TestOPAChartAllowsCustomRootCertificate(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderLifecycleChart(t,
+		"--set", "databaseLifecycle.sslRootCert=/etc/customer/private-ca.pem",
+	)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(t, "verify-full", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.Equal(t, "/etc/customer/private-ca.pem", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"])
+}
+
+func TestOrchestratorChartUsesSecureRDSDefaults(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderOrchestratorLifecycleChart(t)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(t, "verify-full", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.Equal(t, "/etc/ssl/certs/aws-rds-global-bundle.pem", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"])
+}
+
+func TestOrchestratorChartRequireModeOmitsRootCertificate(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderOrchestratorLifecycleChart(t,
+		"--set", "databaseLifecycle.sslMode=require",
+	)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(t, "require", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.NotContains(t, env, "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT")
+}
+
+func TestOrchestratorChartAllowsCustomRootCertificate(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderOrchestratorLifecycleChart(t,
+		"--set", "databaseLifecycle.sslRootCert=/etc/customer/private-ca.pem",
+	)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(t, "verify-full", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"])
+	require.Equal(t, "/etc/customer/private-ca.pem", env["SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"])
 }
 
 func TestOPAChartPreservesOperatorPodFSGroup(t *testing.T) {
@@ -146,39 +206,43 @@ func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
-		name string
-		args []string
-		want string
+		name    string
+		args    []string
+		wantAny []string
 	}{
 		{
-			name: "connector role",
-			args: []string{"--set", "postgres.nativeDbConnectorRoleArn=null"},
-			want: "postgres.nativeDbConnectorRoleArn is required when auth_mode=aws_iam_role",
+			name:    "connector role",
+			args:    []string{"--set", "postgres.nativeDbConnectorRoleArn=null"},
+			wantAny: []string{"postgres.nativeDbConnectorRoleArn is required when auth_mode=aws_iam_role"},
 		},
 		{
-			name: "verify full TLS",
-			args: []string{"--set", "databaseLifecycle.sslMode=require"},
-			want: "databaseLifecycle.sslMode must be verify-full when auth_mode=aws_iam_role",
+			name:    "verify full TLS",
+			args:    []string{"--set", "databaseLifecycle.sslMode=require"},
+			wantAny: []string{"databaseLifecycle.sslMode must be verify-full when auth_mode=aws_iam_role"},
 		},
 		{
 			name: "root certificate",
 			args: []string{"--set", "databaseLifecycle.sslRootCert=null"},
-			want: "databaseLifecycle.sslRootCert is required when sslMode is verify-ca or verify-full",
+			// Helm schema error wording differs by version.
+			wantAny: []string{
+				"databaseLifecycle: sslRootCert is required",
+				"missing property 'sslRootCert'",
+			},
 		},
 		{
-			name: "matching connector role",
-			args: []string{"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/different-connector"},
-			want: "logicalModuleInputs.connector_role_arn must match postgres.nativeDbConnectorRoleArn when auth_mode=aws_iam_role",
+			name:    "matching connector role",
+			args:    []string{"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/different-connector"},
+			wantAny: []string{"logicalModuleInputs.connector_role_arn must match postgres.nativeDbConnectorRoleArn when auth_mode=aws_iam_role"},
 		},
 		{
-			name: "connector role runtime allowlist",
-			args: []string{"--set-json", "postgres.iamAllowedRoleArnPrefixes=[]"},
-			want: "postgres.nativeDbConnectorRoleArn must be covered by postgres.iamAllowedRoleArnPrefixes when auth_mode=aws_iam_role",
+			name:    "connector role runtime allowlist",
+			args:    []string{"--set-json", "postgres.iamAllowedRoleArnPrefixes=[]"},
+			wantAny: []string{"postgres.nativeDbConnectorRoleArn must be covered by postgres.iamAllowedRoleArnPrefixes when auth_mode=aws_iam_role"},
 		},
 		{
-			name: "secrets ref allowlist",
-			args: []string{"--set-json", "databaseLifecycle.allowedRefPrefixes=[]"},
-			want: "databaseLifecycle.allowedRefPrefixes is required when auth_mode=aws_iam_role",
+			name:    "secrets ref allowlist",
+			args:    []string{"--set-json", "databaseLifecycle.allowedRefPrefixes=[]"},
+			wantAny: []string{"databaseLifecycle.allowedRefPrefixes is required when auth_mode=aws_iam_role"},
 		},
 	} {
 		test := test
@@ -186,7 +250,14 @@ func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
 			t.Parallel()
 			_, output, err := executeLifecycleChartFixture(t, "database-lifecycle-iam-values.yaml", test.args...)
 			require.Error(t, err)
-			require.Contains(t, string(output), test.want)
+			matched := false
+			for _, want := range test.wantAny {
+				if strings.Contains(string(output), want) {
+					matched = true
+					break
+				}
+			}
+			require.Truef(t, matched, "output %q should contain one of %q", string(output), test.wantAny)
 		})
 	}
 }
@@ -447,6 +518,41 @@ func lintLifecycleChartFixture(t *testing.T, fixtureName string, extraArgs ...st
 	lint := exec.Command("helm", args...)
 	output, err := lint.CombinedOutput()
 	return lint, output, err
+}
+
+func renderOrchestratorLifecycleChart(t *testing.T, extraArgs ...string) []byte {
+	t.Helper()
+
+	if _, err := exec.LookPath("helm"); err != nil {
+		t.Skip("helm is not installed")
+	}
+
+	_, filename, _, ok := runtime.Caller(0)
+	require.True(t, ok)
+	sourceChart := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "orchestrator"))
+	chartDir := filepath.Join(t.TempDir(), "orchestrator")
+	require.NoError(t, os.CopyFS(chartDir, os.DirFS(sourceChart)))
+	require.NoError(t, os.Remove(filepath.Join(chartDir, "Chart.lock")))
+	require.NoError(t, os.WriteFile(filepath.Join(chartDir, "Chart.yaml"), []byte(`---
+apiVersion: v2
+name: orchestrator
+type: application
+version: 0.0.1
+`), 0o600))
+
+	args := []string{
+		"template", "lifecycle-test", chartDir,
+		"--set", "databaseLifecycle.allowedModuleSources[0]=./modules/postgres-managed-database",
+		"--set", "databaseLifecycle.allowedResourceTypes[0]=aws_db_instance",
+		"--set", "databaseLifecycle.enabled=true",
+		"--set", "serviceAccount.create=true",
+		"--set", "serviceAccount.irsaRoleArn=arn:aws:iam::123456789012:role/database-lifecycle-worker",
+	}
+	args = append(args, extraArgs...)
+	render := exec.Command("helm", args...)
+	rendered, err := render.CombinedOutput()
+	require.NoError(t, err, string(rendered))
+	return rendered
 }
 
 func renderedDeployment(t *testing.T, rendered []byte) map[string]any {

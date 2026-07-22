@@ -323,7 +323,7 @@ spec:
           value: {{ join "," $allowedModuleSources | quote }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE
           value: {{ $databaseLifecycle.sslMode | quote }}
-        {{- if $databaseLifecycle.sslRootCert }}
+        {{- if or (eq $databaseLifecycle.sslMode "verify-ca") (eq $databaseLifecycle.sslMode "verify-full") }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT
           value: {{ $databaseLifecycle.sslRootCert | quote }}
         {{- end }}

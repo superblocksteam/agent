@@ -27,7 +27,17 @@ The worker requires:
 - `backend.bucket` and `backend.region`
 - an IRSA-capable ServiceAccount, configured through
   `serviceAccount.annotations`
-- an explicit `sslMode` (`verify-full` with `sslRootCert` for production)
+
+The chart defaults managed RDS and Aurora connections to `sslMode: verify-full`
+with the AWS commercial-region trust bundle packaged at
+`/etc/ssl/certs/aws-rds-global-bundle.pem`. That zero-config path assumes AWS
+RDS/Aurora endpoints whose server certificates chain to that bundle. Non-AWS
+Postgres, self-managed endpoints, and non-commercial partitions (GovCloud/China)
+must override `databaseLifecycle.sslRootCert` with a matching CA path, or use
+`sslMode: require` only for exceptional sandboxes that need encryption without
+certificate identity validation. Empty-string `sslMode`/`sslRootCert` overrides
+are rejected by `values.schema.json` — remove pinned empty defaults from older
+values files so the chart defaults apply.
 
 The chart derives the module-source allowlist from `modules.logical.source` and
 `modules.physical.source`. Its built-in sources pin the internal

@@ -82,6 +82,8 @@ FROM base
 
 ARG SB_GIT_COMMIT_SHA
 
+COPY --chmod=0644 workers/javascript/packages/plugins/postgres/src/rds-ca/global-bundle.pem /etc/ssl/certs/aws-rds-global-bundle.pem
+
 # Create and switch to a non-root user
 RUN useradd -m -u 1001 orchestrator
 USER orchestrator

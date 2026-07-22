@@ -13,7 +13,7 @@ import (
 // uses to connect for SQL migrations. The defaults are safe (sslmode
 // require) but operators handling regulated customer databases should
 // set SSLMode=verify-full and point SSLRootCert at the appropriate CA
-// bundle (e.g. /etc/rds/global-bundle.pem) so the migration runner
+// bundle (e.g. /etc/ssl/certs/aws-rds-global-bundle.pem) so the migration runner
 // validates the server certificate identity, not just that the channel
 // is encrypted.
 //

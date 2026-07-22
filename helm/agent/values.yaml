@@ -278,10 +278,13 @@ databaseLifecycle:
   terraformBin: tofu
   pollInterval: 30s
   allowedResourceTypes: []
-  # The worker has no implicit TLS default. Use verify-full with sslRootCert in
-  # production, or require only for intra-VPC sandboxes.
-  sslMode: ""
-  sslRootCert: ""
+  # Managed AWS RDS/Aurora (commercial regions) use full certificate and
+  # hostname verification by default against the packaged AWS trust bundle.
+  # Non-AWS, self-managed, or GovCloud/China endpoints must override the CA
+  # path. Use require only for exceptional intra-VPC sandboxes that cannot
+  # validate identity.
+  sslMode: verify-full
+  sslRootCert: /etc/ssl/certs/aws-rds-global-bundle.pem
   # Empty denies credential-ref resolution.
   allowedRefPrefixes: []
   # Shared Terraform backend and credential resolver for every named group.

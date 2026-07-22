@@ -6,8 +6,6 @@
 # standard config defines it. `credential_secret_prefix: null` deletes the
 # password-mode key that Helm's values merge would otherwise carry over.
 databaseLifecycle:
-  sslMode: verify-full
-  sslRootCert: /etc/rds/global-bundle.pem
   groups:
     nonprod:
       logicalModuleInputs:

@@ -203,7 +203,7 @@ spec:
           value: {{ .Values.sandbox_workers.postgres.nativeDbConnectorRoleArn | quote }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE
           value: {{ .Values.databaseLifecycle.sslMode | quote }}
-        {{- if .Values.databaseLifecycle.sslRootCert }}
+        {{- if or (eq .Values.databaseLifecycle.sslMode "verify-ca") (eq .Values.databaseLifecycle.sslMode "verify-full") }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT
           value: {{ .Values.databaseLifecycle.sslRootCert | quote }}
         {{- end }}

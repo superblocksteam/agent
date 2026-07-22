@@ -271,6 +271,8 @@ LABEL org.opencontainers.image.version=${EXTERNAL_TAG}
 LABEL org.opencontainers.image.created=${IMAGE_CREATED}
 LABEL io.snyk.containers.image.dockerfile="/Dockerfile"
 
+COPY --chmod=0644 workers/javascript/packages/plugins/postgres/src/rds-ca/global-bundle.pem /etc/ssl/certs/aws-rds-global-bundle.pem
+
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/orchestrator                              /app/orchestrator/bin
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json                     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json                               /app/orchestrator/flags.json
