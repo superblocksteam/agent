@@ -58,6 +58,7 @@ echo "${trig}" | grep -q 'activationLagCount:' || fail "default-only: per-stream
 echo "${trig}" | grep -q 'custom-redis' && fail "default-only: should not contain custom trigger"
 echo "${trig}" | grep -q 'type: cron' && fail "default-only: should not contain cron"
 echo "${adv}" | grep -q 'scalingModifiers:' || fail "default-only: prom+redis should use scalingModifiers"
+echo "${adv}" | grep -q 'metricType: AverageValue' || fail "default-only: scalingModifiers metricType must be AverageValue"
 echo "${adv}" | grep -qF 'float(prom) + ceil((rs0) / 100.0)' || fail "default-only: formula should add redis backlog to prom"
 pass "default-only renders additive prom + redis scalingModifiers"
 
@@ -125,6 +126,7 @@ echo "${trig}" | grep -qF '>bool 18) * 9' || fail "custom-merge: extraWarm shoul
 echo "${trig}" | grep -qF ') + 1 +' || fail "custom-merge: prometheus query should include minReplicaCount base"
 echo "${trig}" | grep -qF 'worker_degraded_mode{fleet=' || fail "custom-merge: prometheus query should include worker_degraded_mode"
 grep -E '\) \+ 10$' <<<"${trig}" && fail "custom-merge: prometheus must not add warm buffer unconditionally"
+echo "${adv}" | grep -q 'metricType: AverageValue' || fail "custom-merge: scalingModifiers metricType must be AverageValue"
 echo "${adv}" | grep -qF 'max([float(prom), float(cron)]) + ceil((rs0) / 2.0)' || fail "custom-merge: formula should add redis backlog to max(prom, cron)"
 pass "custom-merge renders additive cron + prom + redis scalingModifiers"
 
@@ -139,6 +141,7 @@ echo "=== multi-stream-sum advanced ==="
 echo "${adv}"
 
 echo "${adv}" | grep -q 'scalingModifiers:' || fail "multi-stream-sum: missing scalingModifiers"
+echo "${adv}" | grep -q 'metricType: AverageValue' || fail "multi-stream-sum: scalingModifiers metricType must be AverageValue"
 echo "${adv}" | grep -qF 'rs0 + rs1 + rs2' || fail "multi-stream-sum: formula must sum stream triggers"
 echo "${adv}" | grep -qF 'max([float(prom), float(cron)]) + ceil((rs0 + rs1 + rs2) / 2.0)' || fail "multi-stream-sum: formula should add redis backlog to max(prom, cron)"
 echo "${adv}" | grep -q 'activationTarget: "2"' || fail "multi-stream-sum: missing activationTarget"

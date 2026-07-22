@@ -93,7 +93,7 @@ ceil((sum(sandbox_execution_pool_in_use{fleet="{{ .fleet }}"}) or vector(0)) / {
 scalingModifiers.formula: max(prom, cron) + ceil(sum(stream lags) / lagCount).
 Prometheus/cron set the execution-based floor; redis backlog adds on top.
 Expected dict keys: streamCount, lagCount (string), hasPrometheus (bool), hasCron (bool)
-Returns desired replica count; pair with metricType Value and target "1".
+Returns desired replica count; pair with metricType AverageValue and target "1".
 */}}
 {{- define "sandbox_workers.kedaScalingModifiersFormula" -}}
 {{- $lagSum := include "sandbox_workers.kedaRedisStreamLagSumExpr" (dict "streamCount" (.streamCount | int)) -}}

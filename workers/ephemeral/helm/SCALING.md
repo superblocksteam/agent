@@ -172,7 +172,7 @@ For **more than one** generated stream, or **prom/cron plus redis**, the chart e
 
 - Each stream trigger is named `rs0`, `rs1`, …
 - Prometheus (when enabled) is named `prom`; cron is named `cron`
-- Formula (desired replicas, `metricType: Value`, `target: "1"`):
+- Formula (desired replicas, `metricType: AverageValue`, `target: "1"`):
 
 ```text
 max([float(prom), float(cron)]) + ceil((rs0 + rs1 + …) / lagCount)

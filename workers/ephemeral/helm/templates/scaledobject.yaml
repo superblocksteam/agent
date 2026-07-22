@@ -51,7 +51,8 @@ spec:
       name: {{ printf "keda-hpa-%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
     {{- if $useScalingModifiers }}
     scalingModifiers:
-      metricType: Value
+      # AverageValue with target "1" makes the HPA scale to ceil(formula) i.e. the desired replica count.
+      metricType: AverageValue
       target: "1"
       activationTarget: {{ $activationLagCount | quote }}
       formula: {{ include "sandbox_workers.kedaScalingModifiersFormula" (dict "streamCount" (len $triggerStreams) "lagCount" $lagCount "hasPrometheus" $hasPrometheus "hasCron" $hasCron) | quote }}
