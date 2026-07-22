@@ -156,8 +156,8 @@ agent.<group>.bucket.<bucket>[.<variant>].plugin.<plugin>.event.<event>
 
 Set optional `streams` on a fleet (or `worker.streams` globally) for an explicit
 key list shared by the task-manager and KEDA. When omitted, both derive keys from
-`plugins`, `events`, and `buckets`. The deprecated `triggerStreams` field is no
-longer read; migrate any remaining uses to `streams`.
+`plugins`, `events`, and `buckets`. The deprecated `triggerStreams` field is no longer read;
+migrate any remaining uses to `streams`.
 
 ### Redis stream lag aggregation (multiple streams)
 
@@ -183,9 +183,10 @@ triggers only (no prom/cron), the formula is just the backlog term.
 
 `lagCount` defaults to the fleet's `queue.executionPool` (50 for non-ephemeral
 fleets, 2 for ephemeral). Override with `fleet.keda.lagCount` when needed.
-`lagCount` and `activationLagCount` apply to **total** lag across streams. Fleets
-with prom/cron plus redis use `scalingModifiers` (including single-stream fleets).
-Redis-only fleets with one stream keep per-trigger `lagCount` metadata.
+Each redis-streams trigger sets per-stream `lagCount` and `activationLagCount`
+so KEDA reports Redis 7 consumer-group **lag** (not XPENDING) into the formula;
+the formula's `lagCount` divisor converts total lag into additional replicas.
+Fleets with prom/cron plus redis use `scalingModifiers` (including single-stream fleets).
 
 ### Trigger modes
 

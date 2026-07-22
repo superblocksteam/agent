@@ -53,7 +53,8 @@ echo "${trig}" | grep -q 'type: redis-streams' || fail "default-only: missing re
 echo "${trig}" | grep -q 'name: rs0' || fail "default-only: redis trigger should be named rs0"
 echo "${trig}" | grep -q 'type: prometheus' || fail "default-only: missing prometheus"
 echo "${trig}" | grep -q 'name: prom' || fail "default-only: prometheus trigger should be named prom"
-echo "${trig}" | grep -q 'lagCount:' && fail "default-only: per-stream lagCount should be omitted when using scalingModifiers"
+echo "${trig}" | grep -q 'lagCount:' || fail "default-only: per-stream lagCount required for Redis 7 lag metrics"
+echo "${trig}" | grep -q 'activationLagCount:' || fail "default-only: per-stream activationLagCount required for scale-to-zero"
 echo "${trig}" | grep -q 'custom-redis' && fail "default-only: should not contain custom trigger"
 echo "${trig}" | grep -q 'type: cron' && fail "default-only: should not contain cron"
 echo "${adv}" | grep -q 'scalingModifiers:' || fail "default-only: prom+redis should use scalingModifiers"
@@ -118,7 +119,7 @@ echo "${trig}" | grep -q 'desiredReplicas: "10"' || fail "custom-merge: missing 
 echo "${trig}" | grep -q 'type: redis-streams' || fail "custom-merge: missing generated redis-streams"
 echo "${trig}" | grep -q 'name: rs0' || fail "custom-merge: redis trigger should be named rs0"
 echo "${trig}" | grep -q 'host: redis.test.svc' || fail "custom-merge: missing generated redis host"
-echo "${trig}" | grep -q 'lagCount:' && fail "custom-merge: per-stream lagCount should be omitted when using scalingModifiers"
+echo "${trig}" | grep -q 'lagCount:' || fail "custom-merge: per-stream lagCount required for Redis 7 lag metrics"
 echo "${trig}" | grep -q 'type: prometheus' || fail "custom-merge: missing prometheus"
 echo "${trig}" | grep -qF '>bool 18) * 9' || fail "custom-merge: extraWarm should gate on in_use > extraWarm*executionPool"
 echo "${trig}" | grep -qF ') + 1 +' || fail "custom-merge: prometheus query should include minReplicaCount base"
@@ -147,7 +148,7 @@ echo "${trig}" | grep -q 'name: rs1' || fail "multi-stream-sum: missing rs1 trig
 echo "${trig}" | grep -q 'name: rs2' || fail "multi-stream-sum: missing rs2 trigger name"
 echo "${trig}" | grep -q 'name: prom' || fail "multi-stream-sum: missing prom trigger name"
 echo "${trig}" | grep -q 'name: cron' || fail "multi-stream-sum: missing cron trigger name"
-echo "${trig}" | grep -q 'lagCount:' && fail "multi-stream-sum: per-stream lagCount should be omitted when using scalingModifiers"
+echo "${trig}" | grep -q 'lagCount:' || fail "multi-stream-sum: per-stream lagCount required for Redis 7 lag metrics"
 pass "multi-stream-sum aggregates stream lags additively via scalingModifiers"
 
 # --- streams-override ---

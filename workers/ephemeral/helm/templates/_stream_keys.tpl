@@ -50,7 +50,7 @@ agent.{{ .group }}.bucket.{{ .bucket }}.plugin.{{ .plugin }}.event.{{ .eventName
 
 {{/*
 Redis stream keys for a fleet: explicit streams list, else generated from plugins/events/buckets.
-Used for task-manager --worker.stream.keys (deployment) and KEDA redis-streams triggers (ScaledObject).
+Used for KEDA redis-streams triggers (ScaledObject).
 Expected dict keys: fleet, workerValues
 Returns JSON object with numeric string keys ("0", "1", ...) because Sprig fromJson only unmarshals objects, not arrays.
 */}}

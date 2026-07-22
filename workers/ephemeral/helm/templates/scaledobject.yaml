@@ -67,7 +67,7 @@ spec:
   {{- if $.Values.keda.prometheusServerAddress }}
   fallback:
     failureThreshold: {{ $.Values.keda.fallbackFailureThreshold | default 3 }}
-    replicas: {{ max 1 (max ($minReplicas | int) ($promBuffer | int)) }}
+    replicas: {{ max ($minReplicas | int) ($promBuffer | int) }}
   {{- end }}
   triggers:
   {{- if $hasTriggers }}
@@ -94,12 +94,10 @@ spec:
         enableTLS: {{ $.Values.queue.tls | quote }}
         stream: {{ $stream }}
         consumerGroup: {{ $v.consumerGroup }}
-        {{- if not $useScalingModifiers }}
         {{- with $lagCount }}
         lagCount: {{ . | quote }}
         {{- end }}
         activationLagCount: {{ $activationLagCount | quote }}
-        {{- end }}
       authenticationRef:
         name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
     {{- end }}
