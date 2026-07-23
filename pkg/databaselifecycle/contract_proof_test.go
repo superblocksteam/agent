@@ -83,6 +83,62 @@ func TestPinnedLifecycleConfigMaterializesValidTerraformModules(t *testing.T) {
 	validateTofuRoot(t, physicalJob.WorkingDir)
 }
 
+func TestPinnedIAMModuleAcceptsV1DescriptorRetirement(t *testing.T) {
+	if os.Getenv("NATIVE_DB_RUN_TERRAFORM_CONTRACT_PROOF") != "1" {
+		t.Skip("set NATIVE_DB_RUN_TERRAFORM_CONTRACT_PROOF=1 to run the pinned module contract proof")
+	}
+
+	pins := nativeDBContractProofModulePins()
+	moduleRoot := nativeDBTerraformModuleRoot(t, pins)
+	logicalSource := fmt.Sprintf("git::file://%s//%s?ref=%s", moduleRoot, pins.LogicalPath, pins.Ref)
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source: logicalSource,
+			Inputs: map[string]any{
+				"auth_mode":          iamAuthMode,
+				"connector_role_arn": validIAMConnectorRoleARN,
+				deploymentTokenInput: validIAMDeploymentToken,
+			},
+		},
+		Backend: map[string]any{"stateBackend": "local"},
+	}, PhysicalDatabaseInstance{
+		MasterCredentialRef: map[string]any{
+			"ref":      "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!cluster",
+			"resolver": "aws_secrets_manager",
+		},
+		Metadata: map[string]any{
+			"aws_account_id":      "123456789012",
+			"cluster_resource_id": "db-ABCDEF0123456789-1",
+			"host":                "orders.abc123.us-east-1.rds.amazonaws.com",
+			"port":                5432,
+			"region":              "us-east-1",
+		},
+	})
+	require.NoError(t, err)
+
+	job := contractProofJob(t, "iam-v1-retire")
+	require.NoError(t, MaterializeResolvedJob(job, DispatchPayload{
+		ApplicationID:      validIAMApplicationID,
+		BindingID:          validIAMBindingID,
+		BindingKey:         "app:prod:orders",
+		ConnectionMetadata: validIAMMetadata(),
+		Environment:        "deployed",
+		Operation:          operationRetireDatabase,
+		Profile:            "production",
+		RequestID:          "request-retire",
+		ResourceKey:        "resource/logical",
+	}, resolved, ProviderSSLOptions{
+		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!"},
+		Mode:               sslModeVerifyFull,
+		RootCert:           "/etc/ssl/certs/aws-rds-global-bundle.pem",
+	}))
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, validIAMV2Username, vars["runtime_role_name"])
+	planTofuDestroyRoot(t, job.WorkingDir)
+}
+
 // helmRenderedContractProofConfig renders the OPA chart's standard config
 // fixture (helm/agent/tests/fixtures/database-lifecycle-config-values.yaml —
 // the same file the helmtests package's TestOPAChartRendersLifecycleWorkerConfigFromNamedGroups
@@ -174,6 +230,22 @@ func validateTofuRoot(t *testing.T, workingDir string) {
 	for _, args := range [][]string{
 		{"init", "-backend=false", "-input=false", "-no-color"},
 		{"validate", "-no-color"},
+	} {
+		command := exec.Command("tofu", args...)
+		command.Dir = workingDir
+		output, err := command.CombinedOutput()
+		require.NoError(t, err, "%s\n%s", command.String(), output)
+	}
+}
+
+func planTofuDestroyRoot(t *testing.T, workingDir string) {
+	t.Helper()
+	if _, err := exec.LookPath("tofu"); err != nil {
+		t.Skip("tofu is not installed")
+	}
+	for _, args := range [][]string{
+		{"init", "-input=false", "-no-color"},
+		{"plan", "-destroy", "-input=false", "-lock=false", "-no-color", "-refresh=false"},
 	} {
 		command := exec.Command("tofu", args...)
 		command.Dir = workingDir

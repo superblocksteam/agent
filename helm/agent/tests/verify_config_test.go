@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	logicalModuleSource          = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.5"
-	physicalModuleSource         = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.5"
+	logicalModuleSource          = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.6"
+	physicalModuleSource         = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.6"
 	vendoredLogicalModuleSource  = "./modules/postgres-managed-database"
 	vendoredPhysicalModuleSource = "./modules/aws-rds-managed-instance"
 )

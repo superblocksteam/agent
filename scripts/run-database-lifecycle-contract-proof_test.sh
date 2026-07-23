@@ -39,6 +39,10 @@ export TEST_GO_LOG="${tmp}/go.log"
 "${root}/scripts/run-database-lifecycle-contract-proof.sh"
 
 grep -Fq "test ./pkg/databaselifecycle/..." "${TEST_GO_LOG}"
+# Prefer the TestPinned prefix so every pinned lifecycle contract proof is selected,
+# including TestPinnedIAMModuleAcceptsV1DescriptorRetirement.
+grep -Fq -- "-run TestPinned|" "${TEST_GO_LOG}"
+grep -Fq "TestWorkerIAMReadyContractFromRealOpenTofu" "${TEST_GO_LOG}"
 grep -Fq "run=1" "${TEST_GO_ENV_LOG}"
 grep -Fq "values=${root}/helm/agent/values.yaml" "${TEST_GO_ENV_LOG}"
 

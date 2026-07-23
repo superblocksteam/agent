@@ -22,10 +22,12 @@ const (
 	validIAMApplicationID    = "application-1"
 	validIAMApplicationToken = "135c0d252350f3bba710c990"
 	validIAMBindingID        = "binding-1"
+	validIAMBindingToken     = "96883863630a181689324e37"
 	validIAMConnectorRoleARN = "arn:aws:iam::123456789012:role/superblocks-native-db-connector"
 	validIAMDeploymentToken  = "0123456789ab"
-	validIAMDatabase         = "sbndb_" + validIAMDeploymentToken + "_96883863630a181689324e37"
+	validIAMDatabase         = "sbndb_" + validIAMDeploymentToken + "_" + validIAMBindingToken
 	validIAMRuntimeUsername  = "sbndb_" + validIAMDeploymentToken + "_" + validIAMApplicationToken + "_runtime"
+	validIAMV2Username       = "sbndb_" + validIAMDeploymentToken + "_" + validIAMBindingToken + "_runtime"
 )
 
 func (provider staticCredentialProvider) Retrieve(context.Context) (aws.Credentials, error) {
@@ -51,6 +53,36 @@ func validIAMMetadata() map[string]any {
 		"region":                  "us-east-1",
 		"username":                validIAMRuntimeUsername,
 	}
+}
+
+func validIAMV2Metadata() map[string]any {
+	metadata := validIAMMetadata()
+	metadata["auth_descriptor_version"] = float64(2)
+	metadata["username"] = validIAMV2Username
+	return metadata
+}
+
+func TestParseIAMAuthDescriptorAcceptsBindingDerivedV2(t *testing.T) {
+	descriptor, err := ParseIAMAuthDescriptor(validIAMV2Metadata())
+
+	require.NoError(t, err)
+	require.Equal(t, validIAMV2Username, descriptor.Username)
+}
+
+func TestParseIAMAuthDescriptorKeepsApplicationDerivedV1Compatibility(t *testing.T) {
+	descriptor, err := ParseIAMAuthDescriptor(validIAMMetadata())
+
+	require.NoError(t, err)
+	require.Equal(t, validIAMRuntimeUsername, descriptor.Username)
+}
+
+func TestParseIAMAuthDescriptorRejectsApplicationDerivedV2Username(t *testing.T) {
+	metadata := validIAMV2Metadata()
+	metadata["username"] = validIAMRuntimeUsername
+
+	_, err := ParseIAMAuthDescriptor(metadata)
+
+	require.ErrorContains(t, err, "username binding token does not match connection_metadata.binding_id")
 }
 
 func TestCanonicalIAMSessionPolicy(t *testing.T) {
@@ -83,6 +115,53 @@ func TestStandaloneRDSIAMDescriptor(t *testing.T) {
 	)
 }
 
+func TestStandaloneRDSIAMDescriptorV2UsesExactBindingPolicy(t *testing.T) {
+	metadata := validIAMV2Metadata()
+	metadata["cluster_resource_id"] = "db-ABCDEF0123456789-1"
+	metadata["host"] = "orders.abc123.us-east-1.rds.amazonaws.com"
+
+	descriptor, err := ParseIAMAuthDescriptor(metadata)
+	require.NoError(t, err)
+	policy, err := CanonicalIAMSessionPolicy(descriptor)
+
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		`{"Version":"2012-10-17","Statement":[{"Sid":"ConnectToThisNativeDatabaseUser","Effect":"Allow","Action":"rds-db:connect","Resource":"arn:aws:rds-db:us-east-1:123456789012:dbuser:db-ABCDEF0123456789-1/sbndb_0123456789ab_96883863630a181689324e37_runtime"}]}`,
+		policy,
+	)
+}
+
+func TestStandaloneRDSIAMDescriptorV2DeniesCrossBindingIdentity(t *testing.T) {
+	first := validIAMV2Metadata()
+	first["cluster_resource_id"] = "db-ABCDEF0123456789-1"
+	first["host"] = "orders.abc123.us-east-1.rds.amazonaws.com"
+
+	crossBinding := validIAMV2Metadata()
+	crossBinding["binding_id"] = "binding-2"
+	crossBinding["cluster_resource_id"] = "db-ABCDEF0123456789-1"
+	crossBinding["host"] = "orders.abc123.us-east-1.rds.amazonaws.com"
+	_, err := ParseIAMAuthDescriptor(crossBinding)
+	require.ErrorContains(t, err, "database token does not match connection_metadata.binding_id")
+
+	second := validIAMV2Metadata()
+	second["binding_id"] = "binding-2"
+	second["cluster_resource_id"] = "db-ABCDEF0123456789-1"
+	second["database"] = "sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3"
+	second["host"] = "orders.abc123.us-east-1.rds.amazonaws.com"
+	second["username"] = "sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3_runtime"
+
+	firstDescriptor, err := ParseIAMAuthDescriptor(first)
+	require.NoError(t, err)
+	secondDescriptor, err := ParseIAMAuthDescriptor(second)
+	require.NoError(t, err)
+	firstPolicy, err := CanonicalIAMSessionPolicy(firstDescriptor)
+	require.NoError(t, err)
+	secondPolicy, err := CanonicalIAMSessionPolicy(secondDescriptor)
+	require.NoError(t, err)
+	require.NotEqual(t, firstPolicy, secondPolicy)
+}
+
 func TestParseIAMAuthDescriptorValidation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -90,8 +169,8 @@ func TestParseIAMAuthDescriptorValidation(t *testing.T) {
 		value       any
 		errorString string
 	}{
-		{name: "descriptor version", key: "auth_descriptor_version", value: float64(2), errorString: "auth_descriptor_version must be 1"},
-		{name: "fractional descriptor version", key: "auth_descriptor_version", value: 1.5, errorString: "auth_descriptor_version must be 1"},
+		{name: "descriptor version", key: "auth_descriptor_version", value: float64(3), errorString: "auth_descriptor_version must be 1 or 2"},
+		{name: "fractional descriptor version", key: "auth_descriptor_version", value: 1.5, errorString: "auth_descriptor_version must be 1 or 2"},
 		{name: "missing application id", key: "application_id", value: " ", errorString: "application_id missing"},
 		{name: "missing binding id", key: "binding_id", value: "", errorString: "binding_id missing"},
 		{name: "account id", key: "aws_account_id", value: "123", errorString: "exactly 12 digits"},
@@ -197,6 +276,50 @@ func TestNewDSNBuilderIAMUsesExactSignerInputsAndPolicy(t *testing.T) {
 	)
 	assert.LessOrEqual(t, len(roleSessionName), 64)
 	assert.Regexp(t, regexp.MustCompile(`^sb-ndb-[0-9a-f]{32}$`), roleSessionName)
+}
+
+func TestNewDSNBuilderIAMSeparatesV2BindingsAndReconstructsPolicies(t *testing.T) {
+	var (
+		policies     []string
+		sessionNames []string
+		usernames    []string
+	)
+	build := NewDSNBuilder(DSNOptions{
+		ExpectedConnectorRoleARN: validIAMConnectorRoleARN,
+		SSLMode:                  sslModeVerifyFull,
+		SSLRootCert:              "/ca.pem",
+		AWSConfigLoader: func(context.Context, string) (aws.Config, error) {
+			return aws.Config{}, nil
+		},
+		AssumeRoleProviderFactory: func(_ aws.Config, _ string, sessionName, policy string) (aws.CredentialsProvider, error) {
+			policies = append(policies, policy)
+			sessionNames = append(sessionNames, sessionName)
+			return staticCredentialProvider{accessKeyID: sessionName}, nil
+		},
+		RDSAuthTokenGenerator: func(_ context.Context, _ string, _ string, username string, _ aws.CredentialsProvider) (string, error) {
+			usernames = append(usernames, username)
+			return "signed-token", nil
+		},
+	})
+	first := validIAMV2Metadata()
+	first["session_policy"] = `{"Statement":[{"Effect":"Allow","Action":"rds-db:connect","Resource":"*"}]}`
+	second := validIAMV2Metadata()
+	second["binding_id"] = "binding-2"
+	second["database"] = "sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3"
+	second["username"] = "sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3_runtime"
+
+	_, err := build(context.Background(), TerminalCallback{ConnectionMetadata: first})
+	require.NoError(t, err)
+	_, err = build(context.Background(), TerminalCallback{ConnectionMetadata: second})
+	require.NoError(t, err)
+
+	require.Equal(t, []string{validIAMV2Username, "sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3_runtime"}, usernames)
+	require.Equal(t, []string{
+		`{"Version":"2012-10-17","Statement":[{"Sid":"ConnectToThisNativeDatabaseUser","Effect":"Allow","Action":"rds-db:connect","Resource":"arn:aws:rds-db:us-east-1:123456789012:dbuser:cluster-ABC123DEF456EXAMPLE/sbndb_0123456789ab_96883863630a181689324e37_runtime"}]}`,
+		`{"Version":"2012-10-17","Statement":[{"Sid":"ConnectToThisNativeDatabaseUser","Effect":"Allow","Action":"rds-db:connect","Resource":"arn:aws:rds-db:us-east-1:123456789012:dbuser:cluster-ABC123DEF456EXAMPLE/sbndb_0123456789ab_2f2721a87e9f6c0af16ba7a3_runtime"}]}`,
+	}, policies)
+	require.Len(t, sessionNames, 2, "binding-specific authorization must create distinct cache entries")
+	require.NotEqual(t, sessionNames[0], sessionNames[1], "binding identity must produce distinct role sessions")
 }
 
 func TestNewDSNBuilderIAMRequiresVerifyFullAndRootCertificate(t *testing.T) {

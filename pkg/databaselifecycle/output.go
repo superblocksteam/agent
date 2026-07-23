@@ -57,6 +57,9 @@ func ReadyCallbackFromTerraformOutput(dispatch DispatchPayload, result Result) (
 func bindTrustedIAMDispatchIdentity(dispatch DispatchPayload, connectionMetadata map[string]any) (map[string]any, error) {
 	authMode, present := connectionMetadata["auth_mode"]
 	if !present {
+		if hasManagedIAMDescriptorFields(dispatch, connectionMetadata) {
+			return nil, unsupportedIAMDispatchMetadata(errors.New("connection_metadata.auth_mode is required for managed IAM metadata"))
+		}
 		return connectionMetadata, nil
 	}
 	if authMode != iamAuthMode {
@@ -89,6 +92,30 @@ func bindTrustedIAMDispatchIdentity(dispatch DispatchPayload, connectionMetadata
 		return nil, unsupportedIAMDispatchMetadata(fmt.Errorf("validate IAM connection metadata: %w", err))
 	}
 	return bound, nil
+}
+
+func hasManagedIAMDescriptorFields(dispatch DispatchPayload, connectionMetadata map[string]any) bool {
+	for _, key := range []string{"auth_descriptor_version", "connector_role_arn"} {
+		if _, present := connectionMetadata[key]; present {
+			return true
+		}
+	}
+	if strings.TrimSpace(dispatch.ApplicationID) == "" || strings.TrimSpace(dispatch.BindingID) == "" {
+		return false
+	}
+	database, _ := connectionMetadata["database"].(string)
+	username, _ := connectionMetadata["username"].(string)
+	databaseIdentifier := databaseIdentifierPattern.FindStringSubmatch(database)
+	usernameIdentifier := runtimeUsernamePattern.FindStringSubmatch(username)
+	if databaseIdentifier == nil || usernameIdentifier == nil {
+		return false
+	}
+	if databaseIdentifier[1] != usernameIdentifier[1] ||
+		databaseIdentifier[2] != expectedIAMDatabaseToken(dispatch.BindingID) {
+		return false
+	}
+	return usernameIdentifier[2] == expectedIAMApplicationToken(dispatch.ApplicationID) ||
+		usernameIdentifier[2] == expectedIAMDatabaseToken(dispatch.BindingID)
 }
 
 func unsupportedIAMDispatchMetadata(err error) error {

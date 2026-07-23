@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	iamAuthDescriptorVersion = 1
-	iamAuthMode              = "aws_iam_role"
-	iamSessionPolicySID      = "ConnectToThisNativeDatabaseUser"
+	iamAuthDescriptorVersionV1 = 1
+	iamAuthDescriptorVersionV2 = 2
+	iamAuthMode                = "aws_iam_role"
+	iamSessionPolicySID        = "ConnectToThisNativeDatabaseUser"
 )
 
 var (
@@ -41,6 +42,7 @@ type IAMAuthDescriptor struct {
 	Port              int
 	Region            string
 	Username          string
+	Version           int
 }
 
 func ParseIAMAuthDescriptor(metadata map[string]any) (IAMAuthDescriptor, error) {
@@ -52,8 +54,8 @@ func ParseIAMAuthDescriptor(metadata map[string]any) (IAMAuthDescriptor, error) 
 		return IAMAuthDescriptor{}, fmt.Errorf("connection_metadata.auth_mode must be %q", iamAuthMode)
 	}
 	version, ok := descriptorInteger(metadata["auth_descriptor_version"])
-	if !ok || version != iamAuthDescriptorVersion {
-		return IAMAuthDescriptor{}, fmt.Errorf("connection_metadata.auth_descriptor_version must be %d", iamAuthDescriptorVersion)
+	if !ok || (version != iamAuthDescriptorVersionV1 && version != iamAuthDescriptorVersionV2) {
+		return IAMAuthDescriptor{}, errors.New("connection_metadata.auth_descriptor_version must be 1 or 2")
 	}
 
 	port, ok := descriptorInteger(metadata["port"])
@@ -72,6 +74,7 @@ func ParseIAMAuthDescriptor(metadata map[string]any) (IAMAuthDescriptor, error) 
 		Port:              port,
 		Region:            descriptorString(metadata, "region"),
 		Username:          descriptorString(metadata, "username"),
+		Version:           version,
 	}
 	if err := descriptor.Validate(); err != nil {
 		return IAMAuthDescriptor{}, err
@@ -119,8 +122,14 @@ func (descriptor IAMAuthDescriptor) Validate() error {
 	if databaseIdentifier[2] != expectedIAMDatabaseToken(descriptor.BindingID) {
 		return errors.New("connection_metadata.database token does not match connection_metadata.binding_id")
 	}
-	if usernameIdentifier[2] != expectedIAMApplicationToken(descriptor.ApplicationID) {
-		return errors.New("connection_metadata.username application token does not match connection_metadata.application_id")
+	expectedUsernameToken := expectedIAMApplicationToken(descriptor.ApplicationID)
+	usernameTokenName := "application"
+	if descriptor.Version == iamAuthDescriptorVersionV2 {
+		expectedUsernameToken = expectedIAMDatabaseToken(descriptor.BindingID)
+		usernameTokenName = "binding"
+	}
+	if usernameIdentifier[2] != expectedUsernameToken {
+		return fmt.Errorf("connection_metadata.username %s token does not match connection_metadata.%s_id", usernameTokenName, usernameTokenName)
 	}
 
 	roleARN := connectorRoleARNPattern.FindStringSubmatch(descriptor.ConnectorRoleARN)

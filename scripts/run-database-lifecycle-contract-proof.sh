@@ -26,5 +26,5 @@ export NATIVE_DB_RUN_TERRAFORM_CONTRACT_PROOF=1
 
 cd "${ROOT}"
 go test ./pkg/databaselifecycle/... \
-	-run 'TestPinnedLifecycleConfigMaterializesValidTerraformModules|TestWorkerIAMReadyContractFromRealOpenTofu' \
+	-run 'TestPinned|TestWorkerIAMReadyContractFromRealOpenTofu' \
 	-count=1 -timeout 5m -v

@@ -191,14 +191,26 @@ func deriveIAMSharedPhysicalDatabaseInputs(inputs map[string]any, dispatch Dispa
 		return unsupportedSharedModeCredentialRef("bindingId is required in aws_iam_role mode")
 	}
 
-	appToken := domainSeparatedIdentifierToken("application", dispatch.ApplicationID)
 	databaseToken := domainSeparatedIdentifierToken("database", dispatch.BindingID)
 	databaseName := fmt.Sprintf("sbndb_%s_%s", deploymentToken, databaseToken)
 	inputs["application_id"] = dispatch.ApplicationID
 	inputs["binding_id"] = dispatch.BindingID
 	inputs["database_name"] = databaseName
 	inputs["database_owner_role_name"] = databaseName + "_owner"
-	inputs["runtime_role_name"] = fmt.Sprintf("sbndb_%s_%s_runtime", deploymentToken, appToken)
+	if dispatch.Operation == operationRetireDatabase {
+		descriptor, err := ParseIAMAuthDescriptor(dispatch.ConnectionMetadata)
+		if err != nil {
+			return unsupportedSharedModeCredentialRef(fmt.Sprintf("retire connection metadata is not a valid IAM descriptor: %v", err))
+		}
+		if descriptor.ApplicationID != dispatch.ApplicationID || descriptor.BindingID != dispatch.BindingID {
+			return unsupportedSharedModeCredentialRef("retire IAM descriptor identity does not match the dispatch")
+		}
+		descriptorDatabaseIdentifier := databaseIdentifierPattern.FindStringSubmatch(descriptor.Database)
+		if descriptorDatabaseIdentifier == nil || descriptorDatabaseIdentifier[1] != deploymentToken {
+			return unsupportedSharedModeCredentialRef("retire IAM descriptor deployment does not match the configured deployment_token")
+		}
+	}
+	inputs["runtime_role_name"] = databaseName + "_runtime"
 	if dispatch.DesiredSpec.LogicalName != "" {
 		setTerraformModuleInputDefault(inputs, "logical_name", safePostgresIdentifier(dispatch.DesiredSpec.LogicalName, databaseName))
 	}

@@ -503,7 +503,7 @@ func TestMaterializeResolvedJobUsesPasswordlessIAMAdministration(t *testing.T) {
 	require.Equal(t, sslModeVerifyFull, vars["postgres_sslmode"])
 	require.Equal(t, "/etc/ssl/certs/rds-global-bundle.pem", vars["postgres_sslrootcert"])
 	require.Equal(t, "us-east-1", vars["region"])
-	require.Equal(t, "sbndb_012345abcdef_7b0aaa00b2db00720fa2d801_runtime", vars["runtime_role_name"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073_runtime", vars["runtime_role_name"])
 	require.NotContains(t, vars, credentialSecretPrefixInput)
 	require.NotContains(t, vars, "migration_credential_ref")
 	require.NotContains(t, vars, "runtime_password_wo")
@@ -535,6 +535,72 @@ func TestMaterializeResolvedJobUsesPasswordlessIAMAdministration(t *testing.T) {
 	require.NotContains(t, main, `deployment_token = var.deployment_token`)
 	require.NotContains(t, main, "admin-password")
 	require.NotContains(t, main, "app-password")
+}
+
+func TestDeriveIAMSharedPhysicalDatabaseInputsSeparatesBindingsInSameApplication(t *testing.T) {
+	firstInputs := map[string]any{deploymentTokenInput: "012345abcdef"}
+	secondInputs := map[string]any{deploymentTokenInput: "012345abcdef"}
+
+	require.NoError(t, deriveIAMSharedPhysicalDatabaseInputs(firstInputs, DispatchPayload{
+		ApplicationID: "app-123",
+		BindingID:     "binding-456",
+	}))
+	require.NoError(t, deriveIAMSharedPhysicalDatabaseInputs(secondInputs, DispatchPayload{
+		ApplicationID: "app-123",
+		BindingID:     "binding-457",
+	}))
+
+	require.Equal(t, "app-123", firstInputs["application_id"])
+	require.Equal(t, "app-123", secondInputs["application_id"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073", firstInputs["database_name"])
+	require.Equal(t, "sbndb_012345abcdef_26a4e52373a17d96be0c3dae", secondInputs["database_name"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073_owner", firstInputs["database_owner_role_name"])
+	require.Equal(t, "sbndb_012345abcdef_26a4e52373a17d96be0c3dae_owner", secondInputs["database_owner_role_name"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073_runtime", firstInputs["runtime_role_name"])
+	require.Equal(t, "sbndb_012345abcdef_26a4e52373a17d96be0c3dae_runtime", secondInputs["runtime_role_name"])
+}
+
+func TestDeriveIAMSharedPhysicalDatabaseInputsKeepsCanonicalRuntimeOnV1Retire(t *testing.T) {
+	inputs := map[string]any{deploymentTokenInput: validIAMDeploymentToken}
+
+	require.NoError(t, deriveIAMSharedPhysicalDatabaseInputs(inputs, DispatchPayload{
+		ApplicationID:      validIAMApplicationID,
+		BindingID:          validIAMBindingID,
+		ConnectionMetadata: validIAMMetadata(),
+		Operation:          operationRetireDatabase,
+	}))
+
+	require.Equal(t, validIAMV2Username, inputs["runtime_role_name"])
+}
+
+func TestDeriveIAMSharedPhysicalDatabaseInputsRejectsRetireFromDifferentDeployment(t *testing.T) {
+	inputs := map[string]any{deploymentTokenInput: validIAMDeploymentToken}
+	metadata := validIAMV2Metadata()
+	metadata["database"] = "sbndb_abcdef012345_" + validIAMBindingToken
+	metadata["username"] = "sbndb_abcdef012345_" + validIAMBindingToken + "_runtime"
+
+	err := deriveIAMSharedPhysicalDatabaseInputs(inputs, DispatchPayload{
+		ApplicationID:      validIAMApplicationID,
+		BindingID:          validIAMBindingID,
+		ConnectionMetadata: metadata,
+		Operation:          operationRetireDatabase,
+	})
+
+	require.ErrorContains(t, err, "retire IAM descriptor deployment does not match the configured deployment_token")
+	require.NotContains(t, inputs, "runtime_role_name")
+}
+
+func TestDeriveIAMSharedPhysicalDatabaseInputsRejectsRetireWithoutCanonicalIAMMetadata(t *testing.T) {
+	inputs := map[string]any{deploymentTokenInput: validIAMDeploymentToken}
+
+	err := deriveIAMSharedPhysicalDatabaseInputs(inputs, DispatchPayload{
+		ApplicationID: validIAMApplicationID,
+		BindingID:     validIAMBindingID,
+		Operation:     operationRetireDatabase,
+	})
+
+	require.ErrorContains(t, err, "retire connection metadata is not a valid IAM descriptor")
+	require.NotContains(t, inputs, "runtime_role_name")
 }
 
 func TestMaterializeResolvedJobRejectsIncompleteIAMAdministrationConnection(t *testing.T) {

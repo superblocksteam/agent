@@ -163,9 +163,11 @@ func TestWorkerIAMReadyContractFromRealOpenTofu(t *testing.T) {
 	callback, err := ReadyCallbackFromTerraformOutput(dispatch, result)
 	require.NoError(t, err)
 	require.Equal(t, "ready", callback.LifecycleState)
+	require.Equal(t, float64(iamAuthDescriptorVersionV2), callback.ConnectionMetadata["auth_descriptor_version"])
 	require.Equal(t, iamAuthMode, callback.ConnectionMetadata["auth_mode"])
 	require.Equal(t, "application-1", callback.ConnectionMetadata["application_id"])
 	require.Equal(t, "binding-1", callback.ConnectionMetadata["binding_id"])
+	require.Equal(t, "sbndb_012345abcdef_96883863630a181689324e37_runtime", callback.ConnectionMetadata["username"])
 	// No runtime password ever gets materialized into the callback: IAM mode
 	// must be passwordless end to end.
 	require.Empty(t, callback.RuntimeCredentialRefs)

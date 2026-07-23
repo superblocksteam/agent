@@ -113,7 +113,7 @@ variable "postgres_sslrootcert" {
 # dispatch payload before the callback is validated.
 output "connection_metadata" {
   value = {
-    auth_descriptor_version = 1
+    auth_descriptor_version = 2
     auth_mode               = var.auth_mode
     aws_account_id          = var.aws_account_id
     cluster_resource_id     = var.cluster_resource_id

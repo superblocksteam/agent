@@ -117,7 +117,7 @@ func TestReadyCallbackFromTerraformOutputIAMOmitsCredentialRefs(t *testing.T) {
 			OutputJSON: `{
 				"connection_metadata":{"sensitive":false,"value":{
 					"application_id":"application-1",
-					"auth_descriptor_version":1,
+					"auth_descriptor_version":2,
 					"auth_mode":"aws_iam_role",
 					"aws_account_id":"123456789012",
 					"binding_id":"binding-1",
@@ -127,7 +127,7 @@ func TestReadyCallbackFromTerraformOutputIAMOmitsCredentialRefs(t *testing.T) {
 					"host":"orders.cluster-abc123.us-east-1.rds.amazonaws.com",
 					"port":5432,
 					"region":"us-east-1",
-					"username":"sbndb_0123456789ab_135c0d252350f3bba710c990_runtime"
+					"username":"sbndb_0123456789ab_96883863630a181689324e37_runtime"
 				}},
 				"runtime_credential_refs":{"sensitive":false,"value":{"password":{"resolver":"vault","ref":"should-not-escape"}}},
 				"migration_credential_refs":{"sensitive":false,"value":{"password":{"resolver":"vault","ref":"should-not-escape"}}}
@@ -141,6 +141,100 @@ func TestReadyCallbackFromTerraformOutputIAMOmitsCredentialRefs(t *testing.T) {
 	require.Nil(t, callback.MigrationCredentialRefs)
 }
 
+func TestReadyCallbackFromTerraformOutputRejectsIAMMetadataWithoutAuthMode(t *testing.T) {
+	metadata := validIAMV2Metadata()
+	delete(metadata, "auth_mode")
+	encodedMetadata, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	_, err = ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{OutputJSON: `{
+			"connection_metadata":{"value":` + string(encodedMetadata) + `},
+			"runtime_credential_refs":{"value":{"password":{"resolver":"vault","ref":"must-not-downgrade"}}},
+			"migration_credential_refs":{"value":{"password":{"resolver":"vault","ref":"must-not-downgrade"}}}
+		}`},
+	)
+
+	require.ErrorContains(t, err, "connection_metadata.auth_mode is required for managed IAM metadata")
+}
+
+func TestReadyCallbackFromTerraformOutputRejectsCanonicalIAMIdentityWithoutDescriptorMarkers(t *testing.T) {
+	metadata := validIAMV2Metadata()
+	for _, key := range []string{
+		"application_id",
+		"auth_descriptor_version",
+		"auth_mode",
+		"binding_id",
+		"connector_role_arn",
+	} {
+		delete(metadata, key)
+	}
+	encodedMetadata, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	_, err = ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{OutputJSON: `{"connection_metadata":{"value":` + string(encodedMetadata) + `}}`},
+	)
+
+	require.ErrorContains(t, err, "connection_metadata.auth_mode is required for managed IAM metadata")
+}
+
+func TestReadyCallbackFromTerraformOutputPreservesPhysicalIAMMetadataWithoutLogicalAuthMode(t *testing.T) {
+	callback, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			BindingKey: "physical:production:postgres",
+			Operation:  operationEnsurePhysicalDatabaseInstance,
+			RequestID:  "request-1",
+		},
+		Result{OutputJSON: `{
+			"connection_metadata":{"value":{
+				"aws_account_id":"123456789012",
+				"cluster_resource_id":"cluster-ABC123DEF456EXAMPLE",
+				"host":"orders.cluster-abc123.us-east-1.rds.amazonaws.com",
+				"port":5432,
+				"region":"us-east-1"
+			}}
+		}`},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, "cluster-ABC123DEF456EXAMPLE", callback.ConnectionMetadata["cluster_resource_id"])
+}
+
+func TestReadyCallbackFromTerraformOutputRejectsIAMMetadataWithWrongAuthMode(t *testing.T) {
+	metadata := validIAMV2Metadata()
+	metadata["auth_mode"] = "password"
+	encodedMetadata, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	_, err = ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{OutputJSON: `{
+			"connection_metadata":{"value":` + string(encodedMetadata) + `},
+			"runtime_credential_refs":{"value":{"password":{"resolver":"vault","ref":"must-not-downgrade"}}}
+		}`},
+	)
+
+	require.ErrorContains(t, err, `connection_metadata.auth_mode "password" is unsupported`)
+}
+
 func TestReadyCallbackFromTerraformOutputRejectsInvalidIAMMetadata(t *testing.T) {
 	_, err := ReadyCallbackFromTerraformOutput(
 		DispatchPayload{
@@ -152,7 +246,7 @@ func TestReadyCallbackFromTerraformOutputRejectsInvalidIAMMetadata(t *testing.T)
 		Result{
 			OutputJSON: `{
 				"connection_metadata":{"sensitive":false,"value":{
-					"auth_descriptor_version":2,
+					"auth_descriptor_version":3,
 					"auth_mode":"aws_iam_role"
 				}}
 			}`,
@@ -160,7 +254,7 @@ func TestReadyCallbackFromTerraformOutputRejectsInvalidIAMMetadata(t *testing.T)
 	)
 
 	require.ErrorContains(t, err, "validate IAM connection metadata")
-	require.ErrorContains(t, err, "auth_descriptor_version must be 1")
+	require.ErrorContains(t, err, "auth_descriptor_version must be 1 or 2")
 }
 
 func TestReadyCallbackFromTerraformOutputBindsTrustedDispatchIdentityIntoIAMCallback(t *testing.T) {
@@ -183,6 +277,8 @@ func TestReadyCallbackFromTerraformOutputBindsTrustedDispatchIdentityIntoIAMCall
 	require.NoError(t, err)
 	require.Equal(t, validIAMApplicationID, callback.ConnectionMetadata["application_id"])
 	require.Equal(t, validIAMBindingID, callback.ConnectionMetadata["binding_id"])
+	require.Equal(t, float64(iamAuthDescriptorVersionV1), callback.ConnectionMetadata["auth_descriptor_version"])
+	require.Equal(t, validIAMRuntimeUsername, callback.ConnectionMetadata["username"])
 }
 
 func TestReadyCallbackFromTerraformOutputRejectsMismatchedIAMWireIdentity(t *testing.T) {
