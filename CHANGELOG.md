@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Report a missing, expired, or provider-revoked OAuth authorization-code token as an unauthenticated `CheckAuth` verdict (HTTP 401) instead of an `IntegrationOAuthError` request failure (HTTP 400), so clients drive the re-authorization flow instead of retrying, and stop logging that expected state as an error.
 - Scope managed Native Database IAM PostgreSQL database, owner, and runtime usernames to each binding while accepting existing application-scoped descriptors during rollout.
 - Update `@superblocksteam/sdk-api` to `v0.0.8` and advertise `javascriptsdkapi` `0.0.3` so Apps 3.0 APIs can request non-JSON (`responseType: "text"`) HTTP responses
 - **Breaking (Helm defaults):** Default managed RDS and Aurora lifecycle connections to `sslMode: verify-full` with the AWS trust bundle packaged in the agent image at `/etc/ssl/certs/aws-rds-global-bundle.pem`. Empty-string `databaseLifecycle.sslMode` / `sslRootCert` overrides (including pinned copies of the previous chart defaults) are no longer valid — remove those keys to inherit the new defaults, or set an explicit enum/`sslRootCert` path. Non-AWS endpoints must override `sslRootCert` or use `sslMode: require`.

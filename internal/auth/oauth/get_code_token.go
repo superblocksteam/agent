@@ -30,6 +30,16 @@ var (
 	ErrInvalidRefreshToken = errors.New("[oauth-code] invalid refresh token")
 )
 
+// IsAuthorizationRequired reports whether err means the user has no usable
+// token and must (re)run the OAuth authorization flow — as opposed to a
+// system failure (config error, server or provider unreachable). These
+// sentinels are only attached to errors on the needs-authorization paths.
+func IsAuthorizationRequired(err error) bool {
+	return errors.Is(err, ErrNoTokenFound) ||
+		errors.Is(err, ErrNoRefreshTokenFound) ||
+		errors.Is(err, ErrInvalidRefreshToken)
+}
+
 //go:generate mockery --name OAuthCodeTokenFetcher --output ../mocks --outpkg mocks
 type OAuthCodeTokenFetcher interface {
 	// Returns both the access and id token
@@ -74,7 +84,7 @@ func (c *CodeTokenFetcher) Fetch(ctx context.Context, authType string, authConfi
 	logger := c.getEnrichedLogger(authConfig, datasourceId, configurationId, authType)
 
 	if shouldRefreshOnServer && pluginId != pluginIdGsheets {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, fmt.Errorf("refreshTokenFromServer is only supported for gsheets plugin"))
+		return "", "", sberrors.IntegrationOAuthError(fmt.Errorf("refreshTokenFromServer is only supported for gsheets plugin"))
 	}
 
 	var token, idToken string
@@ -82,7 +92,7 @@ func (c *CodeTokenFetcher) Fetch(ctx context.Context, authType string, authConfi
 
 	authConfigStruct, err := jsonutils.ToStruct(authConfig)
 	if err != nil {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 
 	if tokenScope == "datasource" {
@@ -90,7 +100,7 @@ func (c *CodeTokenFetcher) Fetch(ctx context.Context, authType string, authConfi
 		token, err = c.FetcherCacher.FetchSharedToken(authType, authConfigStruct, TokenTypeAccess, datasourceId, configurationId)
 		if err != nil {
 			logger.Warn("failed to fetch shared token", zap.Error(err))
-			return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+			return "", "", sberrors.IntegrationOAuthError(err)
 		}
 		idToken, err = c.FetcherCacher.FetchSharedToken(authType, authConfigStruct, TokenTypeId, datasourceId, configurationId)
 	} else {
@@ -98,14 +108,14 @@ func (c *CodeTokenFetcher) Fetch(ctx context.Context, authType string, authConfi
 		token, err = c.FetcherCacher.FetchUserToken(ctx, authType, authConfigStruct, TokenTypeAccess)
 		if err != nil {
 			logger.Warn("failed to fetch user token", zap.Error(err))
-			return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+			return "", "", sberrors.IntegrationOAuthError(err)
 		}
 		idToken, err = c.FetcherCacher.FetchUserToken(ctx, authType, authConfigStruct, TokenTypeId)
 	}
 
 	if err != nil {
 		logger.Warn("failed to fetch id token", zap.Error(err))
-		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 
 	if token != "" {
@@ -123,11 +133,17 @@ func (c *CodeTokenFetcher) Fetch(ctx context.Context, authType string, authConfi
 	}
 
 	if err != nil {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+		// Preserve the needs-authorization sentinels attached by the
+		// refresh path; anything else is a system failure. Don't
+		// re-wrap errors the refresh path already classified.
+		if sberrors.IsIntegrationOAuthError(err) {
+			return "", "", err
+		}
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 
 	if token == "" {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound, err)
+		return "", "", sberrors.IntegrationOAuthError(ErrNoTokenFound)
 	}
 	// Treat ID token as optional and don't return an error code for that.
 
@@ -176,7 +192,7 @@ func (c *CodeTokenFetcher) refreshFromSelf(ctx context.Context, logger *zap.Logg
 	l.Debug("start fetch user refresh token")
 	refreshToken, err := c.FetcherCacher.FetchUserToken(ctx, authType, authConfig, TokenTypeRefresh)
 	if err != nil {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoRefreshTokenFound, err)
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 	l.Debug("end fetch user refresh token", zap.Bool("has_refresh_token", refreshToken != ""))
 
@@ -188,11 +204,22 @@ func (c *CodeTokenFetcher) refreshFromSelf(ctx context.Context, logger *zap.Logg
 	authConfigCommon := &v1.OAuthCommon{}
 	err = jsonutils.MapToProto(authConfig.AsMap(), authConfigCommon)
 	if err != nil {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoRefreshTokenFound, err)
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 	refreshRes, err := c.OAuthClient.RefreshToken(authConfigCommon, refreshToken)
 	if err != nil {
-		return "", "", sberrors.IntegrationOAuthError(ErrNoRefreshTokenFound, err)
+		// Per RFC 6749 §5.2, "invalid_grant" means the provided
+		// authorization grant or refresh token is invalid, expired,
+		// revoked, does not match the redirection URI used in the
+		// authorization request, or was issued to another client —
+		// so the user must re-authorize. RefreshToken embeds the
+		// provider's response body in its error string, so match on
+		// the code; the gsheets server-refresh path
+		// (refreshFromServerGsheets) detects it the same way.
+		if strings.Contains(err.Error(), "invalid_grant") {
+			return "", "", sberrors.IntegrationOAuthError(ErrInvalidRefreshToken, err)
+		}
+		return "", "", sberrors.IntegrationOAuthError(err)
 	}
 
 	accessToken := refreshRes.AccessToken

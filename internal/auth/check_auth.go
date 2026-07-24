@@ -141,19 +141,27 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 			}
 
 			token, idToken, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, integrationId, configurationId, pluginId)
-			if err != nil {
+			if err != nil && !oauth.IsAuthorizationRequired(err) {
 				log.Error("OAuthCodeTokenFetcher.Fetch error", zap.Error(err))
 				return nil, err
 			}
 
-			if idToken != "" {
-				idTokenCookieName = authId + "-" + oauth.TokenTypeId
-				idTokenCookieValue = idToken
-				//TODO(alex): We should fetch actual expiration time for id token
-				idTokenExp = time.Now().Add(DefaultAccessTokenExpirationPeriod)
-			}
+			if err != nil {
+				// The user has no usable token (never authorized, refresh
+				// token missing/expired, or revoked upstream). That is an
+				// unauthenticated verdict, not a request failure — matching
+				// how every other auth type reports it.
+				log.Debug("oauth-code token unavailable; user authorization required", zap.Error(err))
+			} else {
+				if idToken != "" {
+					idTokenCookieName = authId + "-" + oauth.TokenTypeId
+					idTokenCookieValue = idToken
+					//TODO(alex): We should fetch actual expiration time for id token
+					idTokenExp = time.Now().Add(DefaultAccessTokenExpirationPeriod)
+				}
 
-			authenticated = token != ""
+				authenticated = token != ""
+			}
 		} else {
 			authenticated = true
 		}

@@ -13,12 +13,14 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
 	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -311,6 +313,120 @@ func TestCheckAuth(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheckAuth_OauthCodeNeedsAuthorization(t *testing.T) {
+	newTokenManager := func(fetcherCacher *mocks.FetcherCacher) *tokenManager {
+		httpMock := &mocks.HttpClient{}
+		serverClient := clients.NewServerClient(&clients.ServerClientOptions{
+			URL:    "https://google.com",
+			Client: httpMock,
+			Headers: map[string]string{
+				"x-superblocks-agent-id": "bar",
+			},
+			SuperblocksAgentKey: "foo",
+		})
+		clock := clockwork.NewFakeClock()
+		oauthClient := &oauth.OAuthClient{
+			HttpClient:    httpMock,
+			FetcherCacher: fetcherCacher,
+			Clock:         clock,
+			Logger:        zap.NewNop(),
+		}
+
+		return &tokenManager{
+			OAuthClient:           oauthClient,
+			OAuthCodeTokenFetcher: oauth.NewOAuthCodeTokenFetcher(oauthClient, fetcherCacher, serverClient),
+			clock:                 clock,
+			logger:                zap.NewNop(),
+		}
+	}
+	authConfig := map[string]interface{}{
+		"clientId":               "clientId",
+		"clientSecret":           "clientSecret",
+		"refreshTokenFromServer": false,
+	}
+
+	t.Run("no cached token and no refresh token is unauthenticated, not an error", func(t *testing.T) {
+		fetcherCacher := &mocks.FetcherCacher{}
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeAccess).Return("", nil)
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeId).Return("", nil)
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeRefresh).Return("", nil)
+
+		tm := newTokenManager(fetcherCacher)
+		response, err := tm.CheckAuth(ctxWithCookie(""), DatasourceConfig("oauth-code", authConfig), "integration_id", "configuration_id", "")
+
+		require.NoError(t, err)
+		assert.False(t, response.Authenticated)
+		assert.Empty(t, response.Cookies)
+	})
+
+	t.Run("provider rejecting the refresh token with invalid_grant is unauthenticated, not an error", func(t *testing.T) {
+		fetcherCacher := &mocks.FetcherCacher{}
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeAccess).Return("", nil)
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeId).Return("", nil)
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeRefresh).Return("revokedtoken", nil)
+
+		tm := newTokenManager(fetcherCacher)
+		httpMock := tm.OAuthClient.HttpClient.(*mocks.HttpClient)
+		httpMock.On("Do", mock.MatchedBy(func(r *http.Request) bool {
+			return r.FormValue("grant_type") == "refresh_token" &&
+				r.FormValue("refresh_token") == "revokedtoken"
+		})).Return(&http.Response{
+			StatusCode: 400,
+			Body:       io.NopCloser(strings.NewReader(`{"error":"invalid_grant","error_description":"AADSTS70000: refresh token revoked"}`)),
+		}, nil)
+
+		response, err := tm.CheckAuth(ctxWithCookie(""), DatasourceConfig("oauth-code", authConfig), "integration_id", "configuration_id", "")
+
+		require.NoError(t, err)
+		assert.False(t, response.Authenticated)
+	})
+
+	t.Run("datasource-scoped integration with no shared token is unauthenticated, not an error", func(t *testing.T) {
+		fetcherCacher := &mocks.FetcherCacher{}
+		fetcherCacher.On("FetchSharedToken", "oauth-code", mock.Anything, oauth.TokenTypeAccess, "integration_id", "configuration_id").Return("", nil)
+		fetcherCacher.On("FetchSharedToken", "oauth-code", mock.Anything, oauth.TokenTypeId, "integration_id", "configuration_id").Return("", nil)
+
+		sharedConfig := map[string]interface{}{
+			"clientId":               "clientId",
+			"clientSecret":           "clientSecret",
+			"refreshTokenFromServer": false,
+			"tokenScope":             "datasource",
+		}
+
+		tm := newTokenManager(fetcherCacher)
+		response, err := tm.CheckAuth(ctxWithCookie(""), DatasourceConfig("oauth-code", sharedConfig), "integration_id", "configuration_id", "")
+
+		require.NoError(t, err)
+		assert.False(t, response.Authenticated)
+	})
+
+	t.Run("token fetch failure is still an error", func(t *testing.T) {
+		fetcherCacher := &mocks.FetcherCacher{}
+		fetcherCacher.On("FetchUserToken", mock.Anything, "oauth-code", mock.Anything, oauth.TokenTypeAccess).Return("", errors.New("server unreachable"))
+
+		tm := newTokenManager(fetcherCacher)
+		_, err := tm.CheckAuth(ctxWithCookie(""), DatasourceConfig("oauth-code", authConfig), "integration_id", "configuration_id", "")
+
+		assert.Error(t, err)
+		assert.True(t, sberrors.IsIntegrationOAuthError(err))
+	})
+
+	t.Run("refreshTokenFromServer misconfiguration is still an error", func(t *testing.T) {
+		fetcherCacher := &mocks.FetcherCacher{}
+		misconfigured := map[string]interface{}{
+			"clientId":               "clientId",
+			"clientSecret":           "clientSecret",
+			"refreshTokenFromServer": true,
+		}
+
+		tm := newTokenManager(fetcherCacher)
+		_, err := tm.CheckAuth(ctxWithCookie(""), DatasourceConfig("oauth-code", misconfigured), "integration_id", "configuration_id", "not-gsheets")
+
+		assert.Error(t, err)
+		assert.True(t, sberrors.IsIntegrationOAuthError(err))
+	})
 }
 
 func TestCheckAuth_OauthTokenExchange(t *testing.T) {

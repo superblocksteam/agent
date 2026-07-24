@@ -97,6 +97,51 @@ const integrations = [
     },
     data: {
       datasource: {
+        id: 'rest-api-integration-id-code-unauthorized',
+        name: 'foobar',
+        pluginId: 'restapiintegration',
+        pluginName: 'REST API',
+        organizationId: 'd285751e-664b-4e31-af7a-c4b11567cd46',
+        demoIntegrationId: null,
+        configurationStaging: {
+          name: 'server api test 1687367988990',
+          urlBase: 'awef',
+          authType: 'None',
+        },
+        configurationProd: {
+          name: 'server api test 1687367988990',
+          urlBase: 'awef',
+          authType: 'None',
+        },
+        configuration: {
+          id: 'rest-api-integration-id-code-unauthorized-default-config-id',
+          name: 'server api test 1687367988990',
+          urlBase: 'awef',
+          authType: 'oauth-code',
+          authConfig: {
+            // 'clientid-unauthorized' is special-cased by the fetch-user-token
+            // mock to return no stored tokens, simulating a user who has never
+            // completed the OAuth consent for this integration.
+            clientId: 'clientid-unauthorized',
+            clientSecret: 'clientsecret',
+            audience: 'aud',
+            tokenUrl: `${MOCK_OAUTH_SERVER_URL}/default/token`,
+          },
+        },
+      },
+      plugin: {
+        id: 'restapiintegration',
+      },
+    },
+  },
+  {
+    responseMeta: {
+      status: 200,
+      message: '',
+      success: true,
+    },
+    data: {
+      datasource: {
         id: 'rest-api-integration-id-firebase',
         name: 'foobar',
         pluginId: 'restapiintegration',

@@ -283,6 +283,11 @@ module.exports = [
 
             const a = req.body.authType;
             const { tokenType } = req.body;
+            // Simulates a user who has never completed the OAuth consent:
+            // no access, id, or refresh token exists for this integration.
+            if (req.body.authConfig?.clientId === 'clientid-unauthorized') {
+              return res.status(200).json({ data: '' });
+            }
             if (tokenType === 'id-token') {
               return res.status(200).json({ data: 'some-id-token-that-should-be-a-jwt' });
             }
